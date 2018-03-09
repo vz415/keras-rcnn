@@ -137,6 +137,8 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
             scale = self.find_scale(image)
 
+            image = image[:, :, :3]
+
             image = skimage.transform.rescale(image, scale)
 
             image = self.generator.standardize(image)
