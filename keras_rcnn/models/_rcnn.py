@@ -260,6 +260,35 @@ class RCNN(keras.models.Model):
             )
         )(output_features)
 
+        # Addition of output_masks and all that mask stuff here
+
+        output_masks = keras.layers.TimeDistributed(
+            keras.layers.Conv2D(
+                filters=256,
+                kernel_size=(3, 3),
+                activation="relu",
+                padding="same"
+            )
+        )(output_features)
+
+        output_masks = keras.layers.TimeDistributed(
+            keras.layers.Conv2DTranspose(
+                activation="relu",
+                filters=256,
+                kernel_size=(2, 2),
+                strides=2
+            )
+        )(output_masks)
+
+        output_masks = keras.layers.TimeDistributed(
+            keras.layers.Conv2D(
+                activation="sigmoid",
+                filters=n_categories,
+                kernel_size=(1, 1),
+                strides=1
+            )
+        )(output_masks)
+
         output_deltas, output_scores = keras_rcnn.layers.RCNN()([
             target_proposal_bounding_boxes,
             target_proposal_categories,
@@ -267,33 +296,22 @@ class RCNN(keras.models.Model):
             output_scores
         ])
 
-        output_masks = keras_rcnn.layers.MaskRCNN()([
-            target_proposals,
+        # target_boxes, predicted_boxes, target_masks, predicted_masks
+        output_masks = keras_rcnn.layers.RCNNMaskLoss()([
+            target_proposal_bounding_boxes,  # AKA target_boxes
             output_deltas,
             target_masks,
             output_masks
         ])
 
         output_bounding_boxes, output_labels = keras_rcnn.layers.ObjectDetection()([
-            output_proposals,
+            target_proposal_bounding_boxes,
             output_deltas,
             output_scores,
             target_metadata
         ])
 
         outputs = [output_bounding_boxes, output_labels, output_masks]
-
-        # output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([
-        #     target_metadata,
-        #     output_deltas,
-        #     output_proposal_bounding_boxes,
-        #     output_scores
-        # ])
-        #
-        # outputs = [
-        #     output_bounding_boxes,
-        #     output_categories
-        # ]
 
         super(RCNN, self).__init__(inputs, outputs)
 
