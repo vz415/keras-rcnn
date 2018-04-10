@@ -260,8 +260,8 @@ class RCNN(keras.models.Model):
             )
         )(output_features)
 
+        print(len(output_features), '\n',  output_features)
         # Addition of output_masks and all that mask stuff here
-
         output_masks = keras.layers.TimeDistributed(
             keras.layers.Conv2D(
                 filters=256,
