@@ -82,7 +82,8 @@ def mean_average_precision(target, output, class_descriptions):
 
     # NOTE: The image indices for each detection.
 
-    image_indices = numpy.reshape([index for index in range(len(output_all_scores)) for i in range(len(output_all_scores[index]))], output_all_scores.shape[:2])
+    image_indices = numpy.reshape([index for index in range(len(output_all_scores)) for i in range(len(output_all_scores[index]))],
+                                  output_all_scores.shape[:2])
     
     # concatenate/reshape 
     output_bounding_boxes = numpy.reshape(output_bounding_boxes, (-1, 4))

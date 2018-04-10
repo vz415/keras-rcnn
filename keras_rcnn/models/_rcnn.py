@@ -267,17 +267,33 @@ class RCNN(keras.models.Model):
             output_scores
         ])
 
-        output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([
-            target_metadata,
+        output_masks = keras_rcnn.layers.MaskRCNN()([
+            target_proposals,
             output_deltas,
-            output_proposal_bounding_boxes,
-            output_scores
+            target_masks,
+            output_masks
         ])
 
-        outputs = [
-            output_bounding_boxes,
-            output_categories
-        ]
+        output_bounding_boxes, output_labels = keras_rcnn.layers.ObjectDetection()([
+            output_proposals,
+            output_deltas,
+            output_scores,
+            target_metadata
+        ])
+
+        outputs = [output_bounding_boxes, output_labels, output_masks]
+
+        # output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([
+        #     target_metadata,
+        #     output_deltas,
+        #     output_proposal_bounding_boxes,
+        #     output_scores
+        # ])
+        #
+        # outputs = [
+        #     output_bounding_boxes,
+        #     output_categories
+        # ]
 
         super(RCNN, self).__init__(inputs, outputs)
 
