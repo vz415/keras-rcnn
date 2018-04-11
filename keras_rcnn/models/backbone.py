@@ -39,4 +39,4 @@ def VGG19():
 
         return y.layers[-3].output
 
-return f
+    return f
