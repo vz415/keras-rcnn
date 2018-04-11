@@ -9,6 +9,7 @@ import keras_rcnn.classifiers
 import keras_rcnn.datasets.malaria
 import keras_rcnn.layers
 import keras_rcnn.preprocessing
+import keras_rcnn.models.backbone
 
 
 class RCNN(keras.models.Model):
@@ -56,7 +57,12 @@ class RCNN(keras.models.Model):
             target_metadata
         ]
 
-        output_features = keras.layers.Conv2D(64, **options)(target_image)
+        if backbone:
+            output_features = backbone()(target_image)
+        else:
+            output_features = keras_rcnn.models.backbone.VGG16()(target_image)
+
+        output_features = keras.layers.Conv2D(64, **options)(output_features)
 
         convolution_3x3 = keras.layers.Conv2D(64, **options)(output_features)
 

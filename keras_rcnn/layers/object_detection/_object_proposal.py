@@ -38,14 +38,14 @@ class ObjectProposal(keras.engine.topology.Layer):
         """
         `image_shape_and_scale` has the shape [width, height, scale]
         """
-        anchors, image_shape_and_scale, deltas, scores = inputs
+        anchors, target_metadata, deltas, scores = inputs
         anchors = keras.backend.reshape(anchors, (-1, 4))
 
         # TODO: Fix usage of batch index
         batch_index = 0
 
-        image_shape = image_shape_and_scale[batch_index, :2]
-        image_scale = image_shape_and_scale[batch_index, -1]
+        image_shape = target_metadata[batch_index, :2]
+        image_scale = target_metadata[batch_index, -1]
 
         # 1. generate proposals from bbox deltas and shifted anchors
 

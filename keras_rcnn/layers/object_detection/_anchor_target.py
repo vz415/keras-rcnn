@@ -70,9 +70,9 @@ class AnchorTarget(keras.layers.Layer):
 
     # TODO: should AnchorTarget only be enabled during training
     def call(self, inputs, **kwargs):
-        target_bounding_boxes, metadata, scores = inputs
+        target_bounding_boxes, target_metadata, scores = inputs
 
-        metadata = metadata[0, :] 
+        metadata = target_metadata[0, :]
 
         target_bounding_boxes = target_bounding_boxes[0]
 
