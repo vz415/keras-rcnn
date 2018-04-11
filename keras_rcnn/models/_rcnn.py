@@ -234,16 +234,18 @@ class RCNN(keras.models.Model):
             output_proposal_bounding_boxes
         ])
 
-        output_features = keras.layers.TimeDistributed(
+        # It would make a lot more sense if the mask branch started here... Check with Mask-RCNN paper. Or freeball.
+
+        output_features2 = keras.layers.TimeDistributed(
             keras.layers.Flatten()
         )(output_features)
 
-        output_features = keras.layers.TimeDistributed(
+        output_features2 = keras.layers.TimeDistributed(
             keras.layers.Dense(
                 units=dense_units,
                 activation="relu"
             )
-        )(output_features)
+        )(output_features2)
 
         output_deltas = keras.layers.TimeDistributed(
             keras.layers.Dense(
@@ -251,7 +253,7 @@ class RCNN(keras.models.Model):
                 activation="linear",
                 kernel_initializer="zero"
             )
-        )(output_features)
+        )(output_features2)
 
         output_scores = keras.layers.TimeDistributed(
             keras.layers.Dense(
@@ -259,7 +261,7 @@ class RCNN(keras.models.Model):
                 activation="softmax",
                 kernel_initializer="zero"
             )
-        )(output_features)
+        )(output_features2)
 
         print(tf.shape(output_features), '\n',  output_features)
         # Addition of output_masks and all that mask stuff here
@@ -270,7 +272,7 @@ class RCNN(keras.models.Model):
                 activation="relu",
                 padding="same"
             )
-        )(output_features)
+        )(output_features) # What if output_pooled_features is different than output_features?
 
         output_masks = keras.layers.TimeDistributed(
             keras.layers.Conv2DTranspose(
