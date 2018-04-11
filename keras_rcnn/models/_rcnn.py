@@ -13,7 +13,7 @@ import keras_rcnn.models.backbone
 
 
 class RCNN(keras.models.Model):
-    def __init__(self, input_shape, backbone=None, categories):
+    def __init__(self, input_shape, categories, backbone=None):
         n_categories = len(categories) + 1
 
         target_r, target_c, _ = input_shape
