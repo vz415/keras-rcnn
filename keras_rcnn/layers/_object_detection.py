@@ -35,7 +35,7 @@ class ObjectDetection(keras.engine.topology.Layer):
         metadata, deltas, proposals, scores = x[0], x[1], x[2], x[3]
 
         def detections(num_output):
-            proposals = keras.backend.reshape(proposals, (-1, 4))
+            proposals = keras.backend.reshape(num_output, (-1, 4))
 
             # unscale back to raw image space
 

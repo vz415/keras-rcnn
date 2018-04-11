@@ -70,7 +70,11 @@ class RCNN(keras.models.Model):
 
         output_scores = keras.layers.Conv2D(9 * 1, (1, 1), activation="sigmoid", kernel_initializer="uniform", name="scores")(convolution_3x3)
 
-        target_anchors, target_proposal_bounding_boxes, target_proposal_categories = keras_rcnn.layers.AnchorTarget()([target_bounding_boxes, target_metadata, output_scores])
+        target_anchors, target_proposal_bounding_boxes, target_proposal_categories = keras_rcnn.layers.AnchorTarget()([
+            target_bounding_boxes,
+            target_metadata,
+            output_scores
+        ])
 
         output_deltas, output_scores = keras_rcnn.layers.RPN()([target_proposal_bounding_boxes, target_proposal_categories, output_deltas, output_scores])
 
@@ -94,9 +98,19 @@ class RCNN(keras.models.Model):
 
         output_scores = keras.layers.Activation("softmax")(output_scores)
 
-        output_deltas, output_scores = keras_rcnn.layers.RCNN()([target_proposal_bounding_boxes, target_proposal_categories, output_deltas, output_scores])
+        output_deltas, output_scores = keras_rcnn.layers.RCNN()([
+            target_proposal_bounding_boxes,
+            target_proposal_categories,
+            output_deltas,
+            output_scores])
 
-        output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([target_metadata, output_deltas, output_proposal_bounding_boxes, output_scores])
+        # proposals referenced before assignment -> ObjectDetection class
+        output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([
+            target_metadata,
+            output_deltas,
+            output_proposal_bounding_boxes,
+            output_scores
+        ])
 
         outputs = [
             output_bounding_boxes,
