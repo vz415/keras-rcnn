@@ -92,12 +92,15 @@ class RCNN(keras.models.Model):
             anchor_stride=16,
             backbone=None,
             dense_units=512,
-            mask_shape=(28, 28),
+            mask_shape=None,
             maximum_proposals=300,
             minimum_size=16
     ):
 
         # New
+        if mask_shape is None:
+            mask_shape=(28,28)
+
         if anchor_aspect_ratios is None:
             anchor_aspect_ratios = [0.5, 1.0, 2.0]
 
@@ -215,6 +218,7 @@ class RCNN(keras.models.Model):
             output_proposal_bounding_boxes
         ])
 
+        # Is this just a closeup of the output-proposal_bounding_boxes? That'd make sense...
         output_features_pooled = keras_rcnn.layers.RegionOfInterest((14, 14))([
             target_metadata,
             output_features,
