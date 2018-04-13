@@ -289,11 +289,12 @@ class RCNN(keras.models.Model):
             output_scores
         ])
 
+        print(output_masks)
         # New - Mask Loss layer
         output_masks = keras_rcnn.layers.RCNNMaskLoss()([
             target_proposal_bounding_boxes, # previously 'target_proposal' - 'target_proposal_categories'
             output_deltas,
-            target_masks,
+            target_masks, # Check
             output_masks
         ]) # target_boxes, predicted_boxes, target_masks, predicted_masks
 
