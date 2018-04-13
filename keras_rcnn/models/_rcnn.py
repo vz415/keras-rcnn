@@ -335,3 +335,5 @@ class RCNN(keras.models.Model):
             target_mask,
             target_metadata
         ]
+
+        return super(RCNN, self).predict(x, batch_size, verbose, steps)
