@@ -77,4 +77,4 @@ class TensorBoard(keras.callbacks.TensorBoard):
 
             images[generator_index] = image
 
-return tensorflow.summary.image("training", images)
+        return tensorflow.summary.image("training", images)
