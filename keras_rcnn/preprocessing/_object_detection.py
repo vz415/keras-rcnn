@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import keras.preprocessing.image
 import numpy
 import skimage.color
@@ -94,25 +92,68 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
         return scale
 
-    def _get_batches_of_transformed_samples(self, selection):
+    @staticmethod
+    def _crop_bounding_boxes(bounding_boxes, boundary):
+        cropped_bounding_boxes = numpy.array(boundary)
 
-        target_bounding_boxes = numpy.zeros(
+        bounding_boxes = bounding_boxes.copy()
+
+        bounding_boxes[..., :2] = numpy.maximum(bounding_boxes[..., :2], cropped_bounding_boxes[:2])
+        bounding_boxes[..., 2:] = numpy.minimum(bounding_boxes[..., 2:], cropped_bounding_boxes[2:])
+
+        bounding_boxes[..., :2] -= cropped_bounding_boxes[:2]
+        bounding_boxes[..., 2:] -= cropped_bounding_boxes[:2]
+
+        mask = numpy.all(bounding_boxes[..., :2] < bounding_boxes[..., 2:], axis=2)
+
+        bounding_boxes[~mask] = numpy.zeros((4,))
+
+        return bounding_boxes
+
+    def _crop_image(self, image):
+        crop_r = numpy.random.randint(
+            0,
+            image.shape[0] - self.generator.crop_size[0] - 1
+        )
+
+        crop_c = numpy.random.randint(
+            0,
+            image.shape[1] - self.generator.crop_size[1] - 1
+        )
+
+        crop = image[
+               crop_r:crop_r + self.generator.crop_size[0],
+               crop_c:crop_c + self.generator.crop_size[1],
+               ...
+               ]
+
+        dimensions = numpy.array([
+            crop_r,
+            crop_c,
+            crop_r + self.generator.crop_size[0],
+            crop_c + self.generator.crop_size[1]
+        ])
+
+        return crop, dimensions
+
+    def _get_batches_of_transformed_samples(self, selection):
+        x_bounding_boxes = numpy.zeros(
             (self.batch_size, 0, 4)
         )
 
-        target_categories = numpy.zeros(
+        x_categories = numpy.zeros(
             (self.batch_size, 0, self.n_categories)
         )
 
-        target_images = numpy.zeros(
+        x_images = numpy.zeros(
             (self.batch_size, *self.target_size, self.channels)
         )
 
-        target_masks = numpy.zeros(
+        x_masks = numpy.zeros(
             (self.batch_size, 0, *self.mask_size)
         )
 
-        target_metadata = numpy.zeros(
+        x_metadata = numpy.zeros(
             (self.batch_size, 3)
         )
 
@@ -133,9 +174,19 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
             target_image = numpy.zeros((*self.target_size, self.channels))
 
-            image = skimage.io.imread(pathname)[:,:,:3]
+            image = skimage.io.imread(pathname)
+
+            dimensions = numpy.array([0, 0, image.shape[0], image.shape[1]])
+
+            if self.generator.crop_size:
+                if image.shape[0] > self.generator.crop_size[0] and image.shape[1] > self.generator.crop_size[1]:
+                    image, dimensions = self._crop_image(image)
+
+            dimensions = dimensions.astype(numpy.float16)
 
             scale = self.find_scale(image)
+
+            dimensions *= scale
 
             image = skimage.transform.rescale(image, scale)
 
@@ -152,24 +203,24 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
             target_image[:image_r, :image_c] = image
 
-            target_images[batch_index] = target_image
+            x_images[batch_index] = target_image
 
-            target_metadata[batch_index] = [*self.target_size, 1.0]
+            x_metadata[batch_index] = [*self.target_size, 1.0]
 
             bounding_boxes = self.dictionary[image_index]["objects"]
 
             n_objects = len(bounding_boxes)
 
-            target_bounding_boxes = numpy.resize(
-                target_bounding_boxes, (self.batch_size, n_objects, 4)
+            x_bounding_boxes = numpy.resize(
+                x_bounding_boxes, (self.batch_size, n_objects, 4)
             )
 
-            target_masks = numpy.resize(
-                target_masks, (self.batch_size, n_objects, *self.mask_size)
+            x_masks = numpy.resize(
+                x_masks, (self.batch_size, n_objects, *self.mask_size)
             )
 
-            target_categories = numpy.resize(
-                target_categories,
+            x_categories = numpy.resize(
+                x_categories,
                 (self.batch_size, n_objects, self.n_categories)
             )
 
@@ -218,54 +269,116 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
                         target_bounding_box[3]
                     ]
 
-                target_bounding_boxes[
+                x_bounding_boxes[
                     batch_index,
                     bounding_box_index
                 ] = target_bounding_box
 
-                target_mask = skimage.io.imread(bounding_box["mask"]["pathname"])
+                if "mask" in bounding_box:
+                    target_mask = skimage.io.imread(
+                        bounding_box["mask"]["pathname"]
+                    )
 
-                # New - did this do it?
-                target_mask = skimage.transform.rescale(target_mask, scale)
+                    target_mask = skimage.transform.rescale(target_mask, scale)
 
-                target_mask = target_mask[minimum_r:maximum_r, minimum_c:maximum_c]
+                    target_mask = target_mask[
+                                  minimum_r:maximum_r + 1,
+                                  minimum_c:maximum_c + 1
+                                  ]
 
-                target_mask = skimage.transform.resize(target_mask, self.mask_size, order=0)
+                    target_mask = skimage.transform.resize(
+                        target_mask,
+                        self.mask_size,
+                        order=0
+                    )
 
-                if horizontal_flip:
-                    target_mask = numpy.fliplr(target_mask)
+                    if horizontal_flip:
+                        target_mask = numpy.fliplr(target_mask)
 
-                if vertical_flip:
-                    target_mask = numpy.flipud(target_mask)
+                    if vertical_flip:
+                        target_mask = numpy.flipud(target_mask)
 
-                target_masks[
-                    batch_index,
-                    bounding_box_index
-                ] = target_mask
+                    x_masks[
+                        batch_index,
+                        bounding_box_index
+                    ] = target_mask
 
-                target_category = numpy.zeros((self.n_categories))
+                target_category = numpy.zeros(self.n_categories)
 
                 target_category[self.categories[bounding_box["category"]]] = 1
 
-                target_categories[
+                x_categories[
                     batch_index,
                     bounding_box_index
                 ] = target_category
 
+        x = self._shuffle_objects(x_bounding_boxes, x_categories, x_masks)
+
+        x_bounding_boxes, x_categories, x_masks = x
+
+        x_bounding_boxes = self._crop_bounding_boxes(x_bounding_boxes, dimensions)
+
+        cropped = self._cropped_objects(x_bounding_boxes)
+
+        x_bounding_boxes = x_bounding_boxes[:, ~cropped]
+
+        if x_bounding_boxes.shape == (self.batch_size, 0, 4):
+            x_bounding_boxes = numpy.zeros((self.batch_size, 1, 4))
+
+            minimum_r = numpy.random.randint(0, self.target_size[0])
+            minimum_c = numpy.random.randint(0, self.target_size[1])
+
+            maximum_r = numpy.random.randint(minimum_r, self.target_size[0])
+            maximum_c = numpy.random.randint(minimum_c, self.target_size[1])
+
+            x_bounding_boxes[..., 0] = minimum_r
+            x_bounding_boxes[..., 1] = minimum_c
+            x_bounding_boxes[..., 2] = maximum_r
+            x_bounding_boxes[..., 3] = maximum_c
+
+            x_categories = numpy.zeros((self.batch_size, 1, self.n_categories))
+
+            x_categories[..., -1] = 1.0
+
+            x_masks = numpy.ones((self.batch_size, 1, *self.mask_size))
+        else:
+            x_categories = x_categories[:, ~cropped]
+
+            x_masks = x_masks[:, ~cropped]
+
         x = [
-            target_bounding_boxes,
-            target_categories,
-            target_images,
-            target_masks,
-            target_metadata
+            x_bounding_boxes,
+            x_categories,
+            x_images,
+            x_masks,
+            x_metadata
         ]
 
         return x, None
+
+    @staticmethod
+    def _cropped_objects(x_bounding_boxes):
+        return numpy.all(x_bounding_boxes[..., :] == 0, axis=2)[0]
+
+    def _shuffle_objects(self, x_bounding_boxes, x_categories, x_masks):
+        n = x_bounding_boxes.shape[1]
+
+        if self.shuffle:
+            indicies = numpy.random.permutation(n)
+        else:
+            indicies = numpy.arange(0, n)
+
+        return [
+            x_bounding_boxes[:, indicies],
+            x_categories[:, indicies],
+            x_masks[:, indicies]
+        ]
 
 
 class ObjectDetectionGenerator:
     def __init__(
             self,
+            crop_size=None,
             data_format=None,
             horizontal_flip=False,
             preprocessing_function=None,
@@ -274,6 +387,8 @@ class ObjectDetectionGenerator:
             samplewise_center=False,
             vertical_flip=False
     ):
+        self.crop_size = crop_size
+
         self.data_format = data_format
 
         self.horizontal_flip = horizontal_flip
@@ -314,6 +429,8 @@ class ObjectDetectionGenerator:
         )
 
     def standardize(self, image):
+        image = skimage.exposure.rescale_intensity(image, out_range=(0.0, 1.0))
+
         if self.preprocessing_function:
             image = self.preprocessing_function(image)
 
@@ -323,6 +440,5 @@ class ObjectDetectionGenerator:
         if self.samplewise_center:
             image -= numpy.mean(image, keepdims=True)
 
-        image = skimage.exposure.rescale_intensity(image, out_range=(0.0, 1.0))
 
         return image
