@@ -6,7 +6,7 @@ import tensorflow
 
 import keras_rcnn.backend
 import keras_rcnn.layers
-import keras_rcnn.layers.object_detection._anchor_target as anchor_target
+import keras_rcnn.layers.object_detection._anchor as anchor_target
 
 
 def test_label():
