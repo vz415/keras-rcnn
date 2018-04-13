@@ -11,12 +11,12 @@ class RCNNMaskLoss(keras.layers.Layer):
         super(RCNNMaskLoss, self).__init__(**kwargs)
 
     def call(self, inputs, training=None, **kwargs):
-        target_boxes, predicred_boxes, target_masks, predicted_masks = inputs
+        target_boxes, predicted_boxes, target_masks, predicted_masks = inputs
 
         """
         loss = keras.backend.in_train_phase(
             lambda: self.mask_loss(target_boundingbox=target_boxes, 
-                                   detected_boundingbox=predicred_boxes, 
+                                   detected_boundingbox=predicted_boxes, 
                                    target_mask=target_masks, 
                                    detected_mask=predicted_masks,
                                    threshold=self.threshold),
@@ -26,7 +26,7 @@ class RCNNMaskLoss(keras.layers.Layer):
         """
         loss = self.compute_mask_loss(
             target_bounding_box=target_boxes,
-            output_bounding_box=predicred_boxes,
+            output_bounding_box=predicted_boxes,
             target_mask=target_masks,
             output_mask=predicted_masks,
             threshold=self.threshold
