@@ -182,7 +182,7 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
         target_image = numpy.zeros((*self.target_size, self.channels))
 
-        image = skimage.io.imread(pathname)
+        image = skimage.io.imread(pathname)[:,:,:3]
 
         dimensions = numpy.array([0, 0, image.shape[0], image.shape[1]])
 
