@@ -225,7 +225,6 @@ class RCNN(keras.models.Model):
             keras.layers.Flatten()
         )(output_features_pooled)
 
-        # Think this is the 'pooled' region proposals.
         output_features = keras.layers.TimeDistributed(
             keras.layers.Dense(
                 dense_units,
@@ -261,7 +260,7 @@ class RCNN(keras.models.Model):
                 activation="relu",
                 padding="same"
             )
-        )(output_features_pooled) # Too many args trying to be passed
+        )(output_features_pooled)
 
         output_masks = keras.layers.TimeDistributed(
             keras.layers.Conv2DTranspose(

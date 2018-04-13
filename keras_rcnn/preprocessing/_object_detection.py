@@ -95,7 +95,6 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
         return scale
 
     def _get_batches_of_transformed_samples(self, selection):
-        self.mask_size = (28, 28)
 
         target_bounding_boxes = numpy.zeros(
             (self.batch_size, 0, 4)
@@ -225,6 +224,9 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
                 ] = target_bounding_box
 
                 target_mask = skimage.io.imread(bounding_box["mask"]["pathname"])
+
+                # New - did this do it?
+                target_mask = skimage.transform.rescale(target_mask, scale)
 
                 target_mask = target_mask[minimum_r:maximum_r, minimum_c:maximum_c]
 
