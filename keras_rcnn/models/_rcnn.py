@@ -306,12 +306,11 @@ class RCNN(keras.models.Model):
         ])
 
         # New
-        outputs = [output_bounding_boxes, output_categories, output_masks]
-
-        # outputs = [
-        #     output_bounding_boxes,
-        #     output_categories
-        # ]
+        outputs = [
+            output_bounding_boxes,
+            output_categories,
+            output_masks
+        ]
 
         super(RCNN, self).__init__(inputs, outputs)
 
