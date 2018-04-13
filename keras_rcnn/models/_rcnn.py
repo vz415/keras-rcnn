@@ -95,29 +95,65 @@ class RCNN(keras.models.Model):
 
         output_scores = keras.layers.Conv2D(9 * 1, (1, 1), activation="sigmoid", kernel_initializer="uniform", name="scores")(convolution_3x3)
 
-        target_anchors, target_proposal_bounding_boxes, target_proposal_categories = keras_rcnn.layers.AnchorTarget()([
+        # Definitely check that AnchorTarget is same as in Master branch
+        target_anchors, target_proposal_bounding_boxes, target_proposal_categories = keras_rcnn.layers.AnchorTarget(
+            padding=anchor_padding,
+            aspect_ratios=anchor_aspect_ratios,
+            base_size=anchor_base_size,
+            scales=anchor_scales,
+            stride=anchor_stride
+        )([
             target_bounding_boxes,
             target_metadata,
             output_scores
         ])
 
-        output_deltas, output_scores = keras_rcnn.layers.RPN()([target_proposal_bounding_boxes, target_proposal_categories, output_deltas, output_scores])
+        output_deltas, output_scores = keras_rcnn.layers.RPN()([
+            target_proposal_bounding_boxes,
+            target_proposal_categories,
+            output_deltas,
+            output_scores
+        ])
 
-        output_proposal_bounding_boxes = keras_rcnn.layers.ObjectProposal()([target_anchors, target_metadata, output_deltas, output_scores])
+        # Check if this is the same as master branch
+        output_proposal_bounding_boxes = keras_rcnn.layers.ObjectProposal(
+            maximum_proposals=maximum_proposals,
+            minimum_size=minimum_size
+        )([
+            target_anchors,
+            target_metadata,
+            output_deltas,
+            output_scores
+        ])
 
-        target_proposal_bounding_boxes, target_proposal_categories, output_proposal_bounding_boxes = keras_rcnn.layers.ProposalTarget()([target_bounding_boxes, target_categories, output_proposal_bounding_boxes])
+        target_proposal_bounding_boxes, target_proposal_categories, output_proposal_bounding_boxes = keras_rcnn.layers.ProposalTarget()([
+            target_bounding_boxes,
+            target_categories,
+            output_proposal_bounding_boxes
+        ])
 
-        output_features = keras_rcnn.layers.RegionOfInterest((14, 14))([target_metadata, output_features, output_proposal_bounding_boxes])
+        output_features = keras_rcnn.layers.RegionOfInterest((14, 14))([
+            target_metadata,
+            output_features,
+            output_proposal_bounding_boxes
+        ])
 
-        output_features = keras.layers.TimeDistributed(keras.layers.Flatten())(output_features)
+        output_features = keras.layers.TimeDistributed(
+            keras.layers.Flatten()
+        )(output_features)
 
         # Think this is the 'pooled' region proposals.
-        output_features = keras.layers.TimeDistributed(keras.layers.Dense(256, activation="relu"))(output_features)
+        output_features = keras.layers.TimeDistributed(
+            keras.layers.Dense(
+                dense_units,
+                activation="relu",
+                name='fc1')
+        )(output_features)
 
         # Bounding Boxes - Regression network - why call it 'output_deltas'?
         output_deltas = keras.layers.TimeDistributed(
             keras.layers.Dense(
-                units=4 * n_categories,
+                units=4 * self.n_categories,
                 activation="linear",
                 kernel_initializer="zero",
                 name="deltas2"
@@ -127,14 +163,14 @@ class RCNN(keras.models.Model):
         # Categories - Classification network that classifies each pixel into the classes predicted by first CNN
         output_scores = keras.layers.TimeDistributed(
             keras.layers.Dense(
-                units=1 * n_categories,
+                units=1 * self.n_categories,
                 activation="softmax",
                 kernel_initializer="zero",
                 name="scores2"
             )
         )(output_features)
 
-        # Masks
+        # Masks branch
         output_masks = keras.layers.TimeDistributed(
             keras.layers.Conv2D(
                 filters=256,
@@ -161,8 +197,9 @@ class RCNN(keras.models.Model):
                 strides=1
             )
         )(output_masks)
+        # End Masks ---------------------------------
 
-        # Loss layer
+        # Losses
         output_deltas, output_scores = keras_rcnn.layers.RCNN()([
             target_proposal_bounding_boxes,
             target_proposal_categories,
@@ -170,13 +207,14 @@ class RCNN(keras.models.Model):
             output_scores
         ])
 
-        # New - Loss layer
+        # New - Mask Loss layer
         output_masks = keras_rcnn.layers.MaskRCNN()([
             target_proposal_categories, # previously 'target_proposal'
             target_masks,
             output_masks
         ]) # Deleted 'output_deltas'
 
+        # bbox loss stuff?
         output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([
             target_metadata,
             output_deltas,
@@ -184,17 +222,13 @@ class RCNN(keras.models.Model):
             output_scores
         ])
 
-        # New - Redundant with previous call...
-        output_bounding_boxes, output_labels = keras_rcnn.layers.ObjectDetection()([
-            output_proposals, output_deltas, output_scores, target_metadata])
-
         # New
-        output = [output_bounding_boxes, output_labels, output_masks]
+        outputs = [output_bounding_boxes, output_categories, output_masks]
 
-        outputs = [
-            output_bounding_boxes,
-            output_categories
-        ]
+        # outputs = [
+        #     output_bounding_boxes,
+        #     output_categories
+        # ]
 
         super(RCNN, self).__init__(inputs, outputs)
 
