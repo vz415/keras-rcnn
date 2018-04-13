@@ -8,7 +8,6 @@ import keras_rcnn.backend
 class RegionOfInterest(keras.engine.topology.Layer):
     """
     ROI pooling layer proposed in Mask R-CNN (Kaiming He et. al.).
-
     :param size: Fixed size [h, w], e.g. [7, 7], for the output slices.
     :param stride: Integer, pooling stride.
     :return: slices: 5D Tensor (number of regions, slice_height,
@@ -30,7 +29,6 @@ class RegionOfInterest(keras.engine.topology.Layer):
 
     def call(self, x, **kwargs):
         """
-
         :rtype: `(samples, proposals, width, height, channels)`
         """
         metadata, image, boxes = x[0], x[1], x[2]

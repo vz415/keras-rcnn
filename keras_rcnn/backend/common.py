@@ -14,12 +14,16 @@ def anchor(base_size=16, ratios=None, scales=None):
 
     if scales is None:
         scales = keras.backend.cast([4, 8, 16], keras.backend.floatx())
-    base_anchor = keras.backend.cast([1, 1, base_size, base_size],
-                                     keras.backend.floatx()) - 1
+
+    base_anchor = keras.backend.cast([-base_size / 2, -base_size / 2, base_size / 2, base_size / 2], keras.backend.floatx())
+
     base_anchor = keras.backend.expand_dims(base_anchor, 0)
 
     ratio_anchors = _ratio_enum(base_anchor, ratios)
+
     anchors = _scale_enum(ratio_anchors, scales)
+
+    anchors = keras.backend.round(anchors)
 
     return anchors
 
@@ -29,7 +33,6 @@ def bbox_transform(ex_rois, gt_rois):
     Args:
         ex_rois: proposed bounding box coordinates (x1, y1, x2, y2)
         gt_rois: ground truth bounding box coordinates (x1, y1, x2, y2)
-
     Returns:
         Computed bounding-box regression targets for an image.
     """
@@ -59,7 +62,6 @@ def bbox_transform(ex_rois, gt_rois):
 def clip(boxes, shape):
     """
     Clips box coordinates to be within the width and height as defined in shape
-
     """
     indices = keras.backend.tile(
         keras.backend.arange(0, keras.backend.shape(boxes)[0]), [4])
@@ -104,10 +106,10 @@ def _mkanchors(ws, hs, x_ctr, y_ctr):
     (x_ctr, y_ctr), output a set of anchors (windows).
     """
 
-    col1 = keras.backend.reshape(x_ctr - 0.5 * (ws - 1), (-1, 1))
-    col2 = keras.backend.reshape(y_ctr - 0.5 * (hs - 1), (-1, 1))
-    col3 = keras.backend.reshape(x_ctr + 0.5 * (ws - 1), (-1, 1))
-    col4 = keras.backend.reshape(y_ctr + 0.5 * (hs - 1), (-1, 1))
+    col1 = keras.backend.reshape(x_ctr - 0.5 * ws, (-1, 1))
+    col2 = keras.backend.reshape(y_ctr - 0.5 * hs, (-1, 1))
+    col3 = keras.backend.reshape(x_ctr + 0.5 * ws, (-1, 1))
+    col4 = keras.backend.reshape(y_ctr + 0.5 * hs, (-1, 1))
     anchors = keras.backend.concatenate((col1, col2, col3, col4), axis=1)
 
     return anchors
@@ -119,9 +121,9 @@ def _ratio_enum(anchor, ratios):
     """
     w, h, x_ctr, y_ctr = _whctrs(anchor)
     size = w * h
-    size_ratios = size / ratios
-    ws = keras.backend.round(keras.backend.sqrt(size_ratios))
-    hs = keras.backend.round(ws * ratios)
+    size_ratios = size * ratios
+    ws = keras.backend.sqrt(size_ratios)
+    hs = ws / ratios
     anchors = _mkanchors(ws, hs, x_ctr, y_ctr)
     return anchors
 
@@ -142,10 +144,10 @@ def _whctrs(anchor):
     """
     Return width, height, x center, and y center for an anchor (window).
     """
-    w = anchor[:, 2] - anchor[:, 0] + 1
-    h = anchor[:, 3] - anchor[:, 1] + 1
-    x_ctr = anchor[:, 0] + 0.5 * (w - 1)
-    y_ctr = anchor[:, 1] + 0.5 * (h - 1)
+    w = anchor[:, 2] - anchor[:, 0]
+    h = anchor[:, 3] - anchor[:, 1]
+    x_ctr = anchor[:, 0] + 0.5 * w
+    y_ctr = anchor[:, 1] + 0.5 * h
     return w, h, x_ctr, y_ctr
 
 
@@ -153,8 +155,8 @@ def shift(shape, stride, base_size=16, ratios=None, scales=None):
     """
     Produce shifted anchors based on shape of the map and stride size
     """
-    shift_x = keras.backend.arange(0, shape[1]) * stride
-    shift_y = keras.backend.arange(0, shape[0]) * stride
+    shift_x = keras.backend.arange(0, shape[0] * stride, stride)
+    shift_y = keras.backend.arange(0, shape[1] * stride, stride)
 
     shift_x, shift_y = keras_rcnn.backend.meshgrid(shift_x, shift_y)
     shift_x = keras.backend.reshape(shift_x, [-1])
@@ -169,12 +171,11 @@ def shift(shape, stride, base_size=16, ratios=None, scales=None):
 
     shifts = keras.backend.transpose(shifts)
 
-    anchors = keras_rcnn.backend.anchor(base_size=base_size, ratios=ratios, scales=scales)
+    anchors = anchor(base_size=base_size, ratios=ratios, scales=scales)
 
     number_of_anchors = keras.backend.shape(anchors)[0]
 
-    k = keras.backend.shape(shifts)[
-        0]  # number of base points = feat_h * feat_w
+    k = keras.backend.shape(shifts)[0]  # number of base points = feat_h * feat_w
 
     shifted_anchors = keras.backend.reshape(anchors, [1, number_of_anchors,
                                                       4]) + keras.backend.cast(
@@ -192,7 +193,6 @@ def intersection_over_union(output, target):
     ----------
     output: (N, 4) ndarray of float
     target: (K, 4) ndarray of float
-
     Returns
     -------
     overlaps: (N, K) ndarray of overlap between boxes and query_boxes
@@ -280,11 +280,9 @@ def softmax_classification(target, output, anchored=False, weights=None):
 
 def bbox_transform_inv(boxes, deltas):
     """
-
     Args:
         boxes: roi or proposal coordinates
         deltas: regression targets
-
     Returns:
         coordinates as a result of deltas applied to boxes (should be equal to ground truth)
     """

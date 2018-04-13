@@ -97,10 +97,6 @@ class RCNN(keras.models.Model):
             minimum_size=16
     ):
 
-        # New
-        if mask_shape is None:
-            mask_shape=(28,28)
-
         if anchor_aspect_ratios is None:
             anchor_aspect_ratios = [0.5, 1.0, 2.0]
 
@@ -166,7 +162,7 @@ class RCNN(keras.models.Model):
         )(output_features)
 
         output_deltas = keras.layers.Conv2D(
-            filters=k * 4,
+            filters=k * self.n_categories,
             kernel_size=(1, 1),
             activation="linear",
             kernel_initializer="zero",
@@ -174,14 +170,14 @@ class RCNN(keras.models.Model):
         )(convolution_3x3)
 
         output_scores = keras.layers.Conv2D(
-            filters=k * 1,
+            filters=k * self.n_categories,
             kernel_size=(1, 1),
             activation="sigmoid",
             kernel_initializer="uniform",
             name="scores1"
         )(convolution_3x3)
 
-        # Definitely check that AnchorTarget is same as in Master branch - Anchor should be initialized to new class...
+        # Definitely check that AnchorTarget is same as in Master branch
         target_anchors, target_proposal_bounding_boxes, target_proposal_categories = keras_rcnn.layers.Anchor(
             padding=anchor_padding,
             aspect_ratios=anchor_aspect_ratios,
