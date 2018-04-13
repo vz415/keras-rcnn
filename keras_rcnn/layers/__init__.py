@@ -1,4 +1,4 @@
-from .losses import (RCNN, MaskRCNN, RPN)
+from .losses import (RCNN, RPN)
 
 from .object_detection import (Anchor, ObjectProposal, ProposalTarget)
 
