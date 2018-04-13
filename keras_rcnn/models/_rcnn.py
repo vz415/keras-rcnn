@@ -215,7 +215,7 @@ class RCNN(keras.models.Model):
             output_proposal_bounding_boxes
         ])
 
-        output_features = keras_rcnn.layers.RegionOfInterest((14, 14))([
+        output_features_pooled = keras_rcnn.layers.RegionOfInterest((14, 14))([
             target_metadata,
             output_features,
             output_proposal_bounding_boxes
@@ -223,7 +223,7 @@ class RCNN(keras.models.Model):
 
         output_features = keras.layers.TimeDistributed(
             keras.layers.Flatten()
-        )(output_features)
+        )(output_features_pooled)
 
         # Think this is the 'pooled' region proposals.
         output_features = keras.layers.TimeDistributed(
@@ -261,7 +261,7 @@ class RCNN(keras.models.Model):
                 activation="relu",
                 padding="same"
             )
-        )(output_features)
+        )(output_features_pooled) # Too many args trying to be passed
 
         output_masks = keras.layers.TimeDistributed(
             keras.layers.Conv2DTranspose(
