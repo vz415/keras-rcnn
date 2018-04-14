@@ -279,7 +279,6 @@ class RCNN(keras.models.Model):
                 strides=1
             )
         )(output_masks)
-        # End Masks ---------------------------------
 
         # Losses
         output_deltas, output_scores = keras_rcnn.layers.RCNN()([
@@ -293,9 +292,9 @@ class RCNN(keras.models.Model):
         output_masks = keras_rcnn.layers.RCNNMaskLoss()([
             target_proposal_bounding_boxes, # previously 'target_proposal' - 'target_proposal_categories'
             output_deltas,
-            target_masks, # Check
+            target_masks,
             output_masks
-        ]) # target_boxes, predicted_boxes, target_masks, predicted_masks
+        ])
 
         # bbox loss stuff?
         output_bounding_boxes, output_categories = keras_rcnn.layers.ObjectDetection()([
@@ -311,6 +310,7 @@ class RCNN(keras.models.Model):
             output_categories,
             output_masks
         ]
+        self.get_losses()
 
         super(RCNN, self).__init__(inputs, outputs)
 
