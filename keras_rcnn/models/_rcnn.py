@@ -310,7 +310,6 @@ class RCNN(keras.models.Model):
             output_categories,
             output_masks
         ]
-        self.get_losses()
 
         super(RCNN, self).__init__(inputs, outputs)
 

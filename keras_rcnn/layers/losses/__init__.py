@@ -23,7 +23,6 @@ class RCNN(keras.layers.Layer):
 
         # mask out output values where class is different from targetrcnn loss
         # function
-        # Are they being cheeky and just using classification of pixels as a loss function??
         mask = self.target_scores
 
         labels = keras.backend.repeat_elements(mask, 4, -1)
