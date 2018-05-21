@@ -9,6 +9,10 @@ class BoundingBoxException(Exception):
     pass
 
 
+class BoundingBoxException(Exception):
+    pass
+
+
 class DictionaryIterator(keras.preprocessing.image.Iterator):
     def __init__(
             self,
@@ -135,17 +139,30 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
     def _get_batches_of_transformed_samples(self, selection):
         # TODO: permit batch sizes > 1
         batch_index, image_index = 0, selection[0]
+<<<<<<< HEAD
+=======
+
+>>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
         while True:
             try:
                 x = self._transform_samples(batch_index, image_index)
             except BoundingBoxException:
                 continue
+<<<<<<< HEAD
             break
 
         return x, None
 
     def _transform_samples(self, batch_index, image_index):
 
+=======
+
+            break
+
+        return x, None
+
+    def _transform_samples(self, batch_index, image_index):
+>>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
         x_bounding_boxes = numpy.zeros(
             (self.batch_size, 0, 4)
         )
@@ -182,7 +199,11 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
         target_image = numpy.zeros((*self.target_size, self.channels))
 
+<<<<<<< HEAD
         image = skimage.io.imread(pathname)[:,:,:3]
+=======
+        image = skimage.io.imread(pathname)
+>>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
 
         dimensions = numpy.array([0, 0, image.shape[0], image.shape[1]])
 
@@ -289,10 +310,14 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
 
                 target_mask = skimage.transform.rescale(target_mask, scale)
 
+<<<<<<< HEAD
                 target_mask = target_mask[
                               minimum_r:maximum_r + 1,
                               minimum_c:maximum_c + 1
                               ]
+=======
+                target_mask = target_mask[minimum_r:maximum_r + 1, minimum_c:maximum_c + 1]
+>>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
 
                 target_mask = skimage.transform.resize(
                     target_mask,
@@ -333,6 +358,7 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
         x_categories = x_categories[:, ~cropped]
 
         x_masks = x_masks[:, ~cropped]
+<<<<<<< HEAD
 
         if x_bounding_boxes.shape == (self.batch_size, 0, 4):
             raise BoundingBoxException
@@ -349,6 +375,24 @@ class DictionaryIterator(keras.preprocessing.image.Iterator):
     def _cropped_objects(x_bounding_boxes):
         return numpy.all(x_bounding_boxes[..., :] == 0, axis=2)[0]
 
+=======
+
+        if x_bounding_boxes.shape == (self.batch_size, 0, 4):
+            raise BoundingBoxException
+
+        return [
+            x_bounding_boxes,
+            x_categories,
+            x_images,
+            x_masks,
+            x_metadata
+        ]
+
+    @staticmethod
+    def _cropped_objects(x_bounding_boxes):
+        return numpy.all(x_bounding_boxes[..., :] == 0, axis=2)[0]
+
+>>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
     def _shuffle_objects(self, x_bounding_boxes, x_categories, x_masks):
         n = x_bounding_boxes.shape[1]
 
@@ -429,5 +473,9 @@ class ObjectDetectionGenerator:
         if self.samplewise_center:
             image -= numpy.mean(image, keepdims=True)
 
+<<<<<<< HEAD
 
         return image
+=======
+        return image
+>>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
