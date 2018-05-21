@@ -1,19 +1,9 @@
 # -*- coding: utf-8 -*-
 
-<<<<<<< HEAD
-import keras.backend
-import keras.engine
-import keras.layers
-import numpy
 
-import keras_rcnn.backend
-import keras_rcnn.classifiers
-import keras_rcnn.datasets.malaria
-=======
 import keras
 import numpy
 
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
 import keras_rcnn.layers
 import keras_rcnn.preprocessing
 import keras_rcnn.models.backbone
@@ -60,14 +50,9 @@ class RCNN(keras.models.Model):
     backbone :
 
     dense_units : A positive integer that specifies the dimensionality of
-<<<<<<< HEAD
-        the fully-connected layer.
-        The fully-connected layer is the layer that precedes the
-=======
         the fully-connected layers.
 
         The fully-connected layers are the layers that precede the
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
         fully-connected layers for the classification, regression and
         segmentation target functions.
         Increasing the number of dense units will increase the
@@ -103,13 +88,8 @@ class RCNN(keras.models.Model):
             anchor_scales=None,
             anchor_stride=16,
             backbone=None,
-<<<<<<< HEAD
-            dense_units=512,
-            mask_shape=None,
-=======
             dense_units=1024,
             mask_shape=(28, 28),
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
             maximum_proposals=300,
             minimum_size=16
     ):
@@ -120,15 +100,8 @@ class RCNN(keras.models.Model):
         if anchor_scales is None:
             anchor_scales = [4, 8, 16]
 
-<<<<<<< HEAD
-        # New
         self.mask_shape = mask_shape
 
-        # New
-=======
-        self.mask_shape = mask_shape
-
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
         self.n_categories = len(categories) + 1
 
         k = len(anchor_aspect_ratios) * len(anchor_scales)
@@ -178,11 +151,7 @@ class RCNN(keras.models.Model):
             output_features = keras_rcnn.models.backbone.VGG16()(target_image)
 
         convolution_3x3 = keras.layers.Conv2D(
-<<<<<<< HEAD
-            filters=64,
-=======
             filters=512,
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
             name="3x3",
             **options
         )(output_features)
@@ -240,10 +209,7 @@ class RCNN(keras.models.Model):
             output_proposal_bounding_boxes
         ])
 
-<<<<<<< HEAD
-        # Is this just a closeup of the output-proposal_bounding_boxes? That'd make sense...
-        output_features_pooled = keras_rcnn.layers.RegionOfInterest((14, 14))([
-=======
+
         mask_features = self._mask_network()(
             [
                 target_metadata,
@@ -256,7 +222,6 @@ class RCNN(keras.models.Model):
             extent=(7, 7),
             strides=1
         )([
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
             target_metadata,
             output_features,
             output_proposal_bounding_boxes
@@ -268,11 +233,6 @@ class RCNN(keras.models.Model):
 
         output_features = keras.layers.TimeDistributed(
             keras.layers.Dense(
-<<<<<<< HEAD
-                dense_units,
-                activation="relu",
-                name='fc1')
-=======
                 units=dense_units,
                 activation="relu",
                 name="fc1"
@@ -285,7 +245,6 @@ class RCNN(keras.models.Model):
                 activation="relu",
                 name="fc2"
             )
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
         )(output_features)
 
         # Bounding Boxes - Regression network - why call it 'output_deltas'?
@@ -434,10 +393,7 @@ class RCNN(keras.models.Model):
     def compile(self, optimizer, **kwargs):
         super(RCNN, self).compile(optimizer, None)
 
-<<<<<<< HEAD
-    # New
-=======
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
+
     def predict(self, x, batch_size=None, verbose=0, steps=None):
         target_bounding_boxes = numpy.zeros((x.shape[0], 1, 4))
 
@@ -455,8 +411,4 @@ class RCNN(keras.models.Model):
             target_metadata
         ]
 
-<<<<<<< HEAD
         return super(RCNN, self).predict(x, batch_size, verbose, steps)
-=======
-        return super(RCNN, self).predict(x, batch_size, verbose, steps)
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9

@@ -31,10 +31,9 @@ def _generate_image(image, bounding_boxes):
 
 class TensorBoard(keras.callbacks.TensorBoard):
     """
-<<<<<<< HEAD
-=======
 
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
+
+
     """
 
     def __init__(self, generator):
@@ -81,8 +80,5 @@ class TensorBoard(keras.callbacks.TensorBoard):
 
             images[generator_index] = image
 
-<<<<<<< HEAD
+
         return tensorflow.summary.image("training", images)
-=======
-        return tensorflow.summary.image("training", images)
->>>>>>> a99a50b19612301a3c11010bc3621227bb1aaed9
